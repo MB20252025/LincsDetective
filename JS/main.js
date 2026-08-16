@@ -1,57 +1,50 @@
 // ============================================================
-//  MAIN ENTRY
+//  MAIN ENTRY - DEBUG VERSION
 // ============================================================
+
+console.log('🚀 main.js loaded successfully');
 
 var game;
 
-// ---- Define startNewGame and continueGame globally ----
+// ---- Define startNewGame and continueGame ----
 function startNewGame() {
-  if (!game) {
-    game = new GameManager();
-    game.init(window.suspectsData, window.mainPuzzlesData, window.bonusPuzzlesData);
-  } else {
-    game.resetGame();
-  }
-  window.game = game;
+  console.log('🟢 startNewGame() called');
 
-  // Define puzzleSolved globally so the iframe can call it directly
-  window.puzzleSolved = function() {
-    if (game) {
-      console.log('📥 puzzleSolved called directly');
-      game.onTowerSolved();
-    }
-  };
-
-  document.getElementById('startMenu').style.display = 'none';
-  document.getElementById('gameWrapper').style.display = 'block';
-  renderInitialTab();
-  game.updateUI();
-
-  // Listen for puzzle solved messages from iframe (postMessage)
-  window.addEventListener('message', function(e) {
-    if (e.data && e.data.type === 'PUZZLE_SOLVED') {
-      if (game) {
-        console.log('📥 Received puzzle solved message from iframe');
-        game.onTowerSolved();
-      }
-    }
-  }, false);
-}
-
-function continueGame() {
-  var saved = localStorage.getItem('whitbyConspiracySave');
-  if (!saved) {
-    alert('No saved game found.');
-    return;
-  }
   try {
-    var data = JSON.parse(saved);
+    // Check if GameManager exists
+    if (typeof GameManager === 'undefined') {
+      console.error('❌ GameManager is not defined! Check gameManager.js');
+      alert('GameManager missing! Check console.');
+      return;
+    }
+
+    // Check if puzzle data exists
+    if (typeof window.suspectsData === 'undefined' ||
+        typeof window.mainPuzzlesData === 'undefined' ||
+        typeof window.bonusPuzzlesData === 'undefined') {
+      console.error('❌ Puzzle data is missing! Check puzzlesData.js');
+      alert('Puzzle data missing! Check console.');
+      return;
+    }
+
+    // Check if renderInitialTab exists
+    if (typeof renderInitialTab === 'undefined') {
+      console.error('❌ renderInitialTab is missing! Check ui.js');
+      alert('UI functions missing! Check console.');
+      return;
+    }
+
+    // Initialize game
     if (!game) {
+      console.log('🔄 Creating new GameManager...');
       game = new GameManager();
       game.init(window.suspectsData, window.mainPuzzlesData, window.bonusPuzzlesData);
+    } else {
+      console.log('🔄 Resetting existing game...');
+      game.resetGame();
     }
-    game.loadFromSave(data);
     window.game = game;
+    console.log('✅ Game initialized successfully');
 
     // Define puzzleSolved globally
     window.puzzleSolved = function() {
@@ -61,11 +54,29 @@ function continueGame() {
       }
     };
 
-    document.getElementById('startMenu').style.display = 'none';
-    document.getElementById('gameWrapper').style.display = 'block';
+    // Hide start menu, show game wrapper
+    var startMenu = document.getElementById('startMenu');
+    var gameWrapper = document.getElementById('gameWrapper');
+
+    if (!startMenu) {
+      console.error('❌ #startMenu not found!');
+      return;
+    }
+    if (!gameWrapper) {
+      console.error('❌ #gameWrapper not found!');
+      return;
+    }
+
+    console.log('🔄 Hiding start menu and showing game wrapper...');
+    startMenu.style.display = 'none';
+    gameWrapper.style.display = 'block';
+
+    console.log('🔄 Rendering initial tab...');
     renderInitialTab();
     game.updateUI();
+    console.log('✅ Game started successfully!');
 
+    // Listen for puzzle solved messages
     window.addEventListener('message', function(e) {
       if (e.data && e.data.type === 'PUZZLE_SOLVED') {
         if (game) {
@@ -74,29 +85,108 @@ function continueGame() {
         }
       }
     }, false);
-  } catch (e) {
-    alert('Error loading saved game. Please start a new game.');
-    console.error(e);
+
+  } catch (err) {
+    console.error('🔥 ERROR in startNewGame:', err);
+    alert('Error starting game: ' + err.message + '\nCheck console for details.');
   }
 }
 
-// ---- Expose to window so inline script can call them ----
+function continueGame() {
+  console.log('🟢 continueGame() called');
+
+  try {
+    var saved = localStorage.getItem('whitbyConspiracySave');
+    if (!saved) {
+      alert('No saved game found.');
+      return;
+    }
+
+    var data = JSON.parse(saved);
+
+    // Check dependencies
+    if (typeof GameManager === 'undefined') {
+      console.error('❌ GameManager is not defined!');
+      return;
+    }
+    if (typeof renderInitialTab === 'undefined') {
+      console.error('❌ renderInitialTab is missing!');
+      return;
+    }
+
+    if (!game) {
+      console.log('🔄 Creating new GameManager for load...');
+      game = new GameManager();
+      game.init(window.suspectsData, window.mainPuzzlesData, window.bonusPuzzlesData);
+    }
+    game.loadFromSave(data);
+    window.game = game;
+
+    window.puzzleSolved = function() {
+      if (game) game.onTowerSolved();
+    };
+
+    var startMenu = document.getElementById('startMenu');
+    var gameWrapper = document.getElementById('gameWrapper');
+    if (startMenu) startMenu.style.display = 'none';
+    if (gameWrapper) gameWrapper.style.display = 'block';
+
+    renderInitialTab();
+    game.updateUI();
+
+    window.addEventListener('message', function(e) {
+      if (e.data && e.data.type === 'PUZZLE_SOLVED') {
+        if (game) game.onTowerSolved();
+      }
+    }, false);
+
+    console.log('✅ Game loaded successfully');
+  } catch (e) {
+    console.error('🔥 ERROR in continueGame:', e);
+    alert('Error loading saved game: ' + e.message);
+  }
+}
+
+// ---- Expose to window ----
 window.startNewGame = startNewGame;
 window.continueGame = continueGame;
 
 // ---- DOM ready ----
 document.addEventListener('DOMContentLoaded', function() {
-  // Attach listeners (these will override any inline ones)
-  document.getElementById('newGameBtn').addEventListener('click', startNewGame);
-  document.getElementById('continueGameBtn').addEventListener('click', continueGame);
-  document.getElementById('howToPlayBtn').addEventListener('click', function() {
-    var modal = document.getElementById('howModal');
-    if (modal) modal.style.display = 'flex';
+  console.log('📄 DOM fully loaded');
+
+  // Get button elements
+  var newGameBtn = document.getElementById('newGameBtn');
+  var continueBtn = document.getElementById('continueGameBtn');
+  var howToPlayBtn = document.getElementById('howToPlayBtn');
+
+  console.log('🔍 Button elements:', {
+    newGameBtn: newGameBtn,
+    continueBtn: continueBtn,
+    howToPlayBtn: howToPlayBtn
   });
 
-  // Set Continue button state
-  var continueBtn = document.getElementById('continueGameBtn');
+  if (!newGameBtn) console.error('❌ #newGameBtn not found!');
+  if (!continueBtn) console.error('❌ #continueGameBtn not found!');
+  if (!howToPlayBtn) console.error('❌ #howToPlayBtn not found!');
+
+  // Attach listeners with direct function assignment
+  if (newGameBtn) {
+    newGameBtn.addEventListener('click', function(e) {
+      e.preventDefault();
+      console.log('👆 New Game button clicked');
+      startNewGame();
+    });
+  }
+
   if (continueBtn) {
+    continueBtn.addEventListener('click', function(e) {
+      e.preventDefault();
+      console.log('👆 Continue button clicked');
+      continueGame();
+    });
+
+    // Set Continue button state
     var saved = localStorage.getItem('whitbyConspiracySave');
     if (!saved) {
       continueBtn.style.opacity = '0.4';
@@ -104,18 +194,42 @@ document.addEventListener('DOMContentLoaded', function() {
     }
   }
 
-  // Close handlers
-  document.getElementById('closeHowModal').addEventListener('click', function() {
-    document.getElementById('howModal').style.display = 'none';
-  });
+  if (howToPlayBtn) {
+    howToPlayBtn.addEventListener('click', function(e) {
+      e.preventDefault();
+      console.log('👆 How to Play button clicked');
+      var modal = document.getElementById('howModal');
+      if (modal) {
+        modal.style.display = 'flex';
+        console.log('✅ How to Play modal opened');
+      } else {
+        console.error('❌ #howModal not found!');
+      }
+    });
+  }
 
-  // Close modal handlers (existing)
-  document.getElementById('closeModal').addEventListener('click', function() {
-    document.getElementById('infoModal').style.display = 'none';
-  });
-  document.getElementById('closeConfirmModal').addEventListener('click', function() {
-    document.getElementById('confirmModal').style.display = 'none';
-  });
+  // Close handlers
+  var closeHowBtn = document.getElementById('closeHowModal');
+  if (closeHowBtn) {
+    closeHowBtn.addEventListener('click', function() {
+      document.getElementById('howModal').style.display = 'none';
+    });
+  }
+
+  var closeModalBtn = document.getElementById('closeModal');
+  if (closeModalBtn) {
+    closeModalBtn.addEventListener('click', function() {
+      document.getElementById('infoModal').style.display = 'none';
+    });
+  }
+
+  var closeConfirmBtn = document.getElementById('closeConfirmModal');
+  if (closeConfirmBtn) {
+    closeConfirmBtn.addEventListener('click', function() {
+      document.getElementById('confirmModal').style.display = 'none';
+    });
+  }
+
   window.addEventListener('click', function(e) {
     if (e.target === document.getElementById('infoModal')) {
       document.getElementById('infoModal').style.display = 'none';
@@ -126,22 +240,27 @@ document.addEventListener('DOMContentLoaded', function() {
   });
 
   // Accuse button
-  document.getElementById('accuseBtn').addEventListener('click', function() {
-    if (game && game.cryptogramSolved && !game.caseClosed) {
-      if (typeof showCryptogramModal === 'function') {
-        showCryptogramModal(function(suspectId) {
-          if (suspectId === 's3') {
-            game.caseClosed = true;
-            game.showPopup('🎉 You caught the mastermind! Case closed!');
-          } else {
-            game.showPopup('❌ Wrong suspect! Keep investigating.');
-            game.prisonYears = Math.max(0, game.prisonYears - 5);
-            game.updateUI();
-          }
-        });
+  var accuseBtn = document.getElementById('accuseBtn');
+  if (accuseBtn) {
+    accuseBtn.addEventListener('click', function() {
+      if (game && game.cryptogramSolved && !game.caseClosed) {
+        if (typeof showCryptogramModal === 'function') {
+          showCryptogramModal(function(suspectId) {
+            if (suspectId === 's3') {
+              game.caseClosed = true;
+              game.showPopup('🎉 You caught the mastermind! Case closed!');
+            } else {
+              game.showPopup('❌ Wrong suspect! Keep investigating.');
+              game.prisonYears = Math.max(0, game.prisonYears - 5);
+              game.updateUI();
+            }
+          });
+        }
+      } else {
+        alert('You must decode the cryptogram first!');
       }
-    } else {
-      alert('You must decode the cryptogram first!');
-    }
-  });
+    });
+  }
+
+  console.log('✅ All event listeners attached');
 });
