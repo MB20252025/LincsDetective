@@ -952,51 +952,9 @@
         }
       }, 3000);
 
-      // ─── MENU BUTTON HANDLERS (connect to game functions) ───
-
-      const continueBtn = document.getElementById('continueGameBtn');
-      const newGameBtn = document.getElementById('newGameBtn');
-      const howToPlayBtn = document.getElementById('howToPlayBtn');
-
-      // Show/hide Continue based on saved game
-      const saved = localStorage.getItem('whitbyConspiracySave');
-      if (!saved && continueBtn) {
-        continueBtn.style.opacity = '0.4';
-        continueBtn.style.pointerEvents = 'none';
-      }
-
-      if (continueBtn) {
-        continueBtn.addEventListener('click', function(e) {
-          e.preventDefault();
-          if (typeof window.continueGame === 'function') {
-            window.continueGame();
-          } else {
-            // fallback
-            window.location.reload();
-          }
-        });
-      }
-
-      if (newGameBtn) {
-        newGameBtn.addEventListener('click', function(e) {
-          e.preventDefault();
-          if (typeof window.startNewGame === 'function') {
-            window.startNewGame();
-          } else {
-            window.location.reload();
-          }
-        });
-      }
-
-      if (howToPlayBtn) {
-        howToPlayBtn.addEventListener('click', function(e) {
-          e.preventDefault();
-          const modal = document.getElementById('howModal');
-          if (modal) modal.style.display = 'flex';
-        });
-      }
-
-      console.log('%c🌙 Nocturne — pull the chain to begin...', 'color: #d7b477; font-size: 15px;');
+      // ---- MENU BUTTON HANDLERS (already handled by main.js, so we keep them minimal) ----
+      // We keep the chain and lamp logic only; the button clicks are now handled by main.js
+      // No need to attach listeners here anymore – they are attached in main.js
     }
 
     function resizeCanvas() {
@@ -1020,4 +978,4 @@
   </script>
 
 </body>
-</html>
+  </html>
